@@ -1,65 +1,126 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { getDashboardStats, getWeakPoints } from "@/lib/api";
+import type { DashboardStats, WeakPoint } from "@/lib/types";
+import StatsCard from "@/components/StatsCard";
+
+export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [weakPoints, setWeakPoints] = useState<WeakPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const [s, wp] = await Promise.all([getDashboardStats(), getWeakPoints()]);
+      setStats(s);
+      setWeakPoints(wp);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  if (loading) {
+    return <div className="mt-12 text-center text-gray-400">加载中...</div>;
+  }
+
+  if (!stats) return null;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div>
+      <h1 className="mb-2 text-2xl font-bold">LangMaster</h1>
+      <p className="mb-8 text-sm text-gray-500">
+        场景驱动学习 LangChain & LangGraph
+      </p>
+
+      {/* Stats */}
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatsCard
+          value={`${stats.mastered_count}/${stats.total_points}`}
+          label="已掌握知识点"
+          color="blue"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+        <StatsCard
+          value={stats.interview_count}
+          label="模拟面试次数"
+          color="green"
+        />
+        <StatsCard
+          value={stats.weak_count}
+          label="待复习（薄弱）"
+          color="yellow"
+        />
+        <StatsCard
+          value={
+            stats.last_score_percent !== null
+              ? `${stats.last_score_percent}%`
+              : "-"
+          }
+          label="最近面试得分"
+          color="pink"
+        />
+      </div>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        {/* Weak points */}
+        <div className="rounded-lg border bg-white p-4">
+          <h3 className="mb-3 text-sm font-semibold text-gray-700">
+            📌 推荐复习
+          </h3>
+          {weakPoints.length === 0 ? (
+            <p className="text-sm text-gray-400">暂无薄弱知识点</p>
+          ) : (
+            <div className="space-y-2">
+              {weakPoints.slice(0, 5).map((wp) => (
+                <Link
+                  key={wp.point_id}
+                  href={`/learn/${wp.point_id}`}
+                  className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm hover:bg-gray-100"
+                >
+                  <span>{wp.title}</span>
+                  <span
+                    className={
+                      wp.mastery === "not_started"
+                        ? "text-red-500"
+                        : "text-amber-500"
+                    }
+                  >
+                    {wp.mastery === "not_started" ? "不熟悉" : "部分掌握"}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Quick actions */}
+        <div className="rounded-lg border bg-white p-4">
+          <h3 className="mb-3 text-sm font-semibold text-gray-700">
+            🚀 快捷入口
+          </h3>
+          <div className="space-y-2">
+            <Link
+              href="/learn"
+              className="block rounded-lg bg-blue-500 py-3 text-center text-sm font-semibold text-white hover:bg-blue-600"
+            >
+              开始学习
+            </Link>
+            <Link
+              href="/interview/setup"
+              className="block rounded-lg bg-purple-500 py-3 text-center text-sm font-semibold text-white hover:bg-purple-600"
+            >
+              模拟面试
+            </Link>
+            <Link
+              href="/profile"
+              className="block rounded-lg bg-gray-200 py-3 text-center text-sm font-semibold text-gray-700 hover:bg-gray-300"
+            >
+              个人中心
+            </Link>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
