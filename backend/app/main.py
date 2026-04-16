@@ -1,10 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, engine
+from app.database import Base, SessionLocal, engine
 from app.routers import points, progress, interview, stats
+from app.seed import seed_database
 
 Base.metadata.create_all(bind=engine)
+
+# Seed data on startup
+_db = SessionLocal()
+try:
+    seed_database(_db)
+finally:
+    _db.close()
 
 app = FastAPI(title="LangMaster API")
 
