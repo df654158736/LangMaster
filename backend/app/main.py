@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
-from app.routers import points, progress, interview
+from app.routers import points, progress, interview, stats
 
 Base.metadata.create_all(bind=engine)
 
@@ -19,6 +19,7 @@ app.add_middleware(
 app.include_router(points.router)
 app.include_router(progress.router)
 app.include_router(interview.router)
+app.include_router(stats.router)
 
 
 @app.get("/api/health")
