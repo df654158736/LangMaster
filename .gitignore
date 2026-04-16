@@ -1,1 +1,9 @@
-venv/\n__pycache__/\n*.db\n.superpowers/\nnode_modules/\n.next/\n*.pyc
+venv/
+__pycache__/
+*.db
+*.pyc
+.superpowers/
+node_modules/
+.next/
+.env
+.env.local
