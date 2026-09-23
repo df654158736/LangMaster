@@ -22,11 +22,11 @@
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uv sync --locked
+uv run uvicorn app.main:app --reload --port 8000
 ```
+
+需要先安装 `uv`。后端 Python 版本固定为 3.12，由 `uv` 自动安装并管理。
 
 访问 http://localhost:8000/docs 查看 API 文档。
 
@@ -54,8 +54,7 @@ npm run dev
 
 ```bash
 cd backend
-source venv/bin/activate
-python -m pytest tests/ -v
+uv run pytest tests/ -v
 ```
 
 27 个后端测试覆盖知识点、进度、面试、统计四个模块。

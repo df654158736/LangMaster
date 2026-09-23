@@ -9,12 +9,13 @@ cd "$ROOT_DIR"
 BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 
-# First-run setup if needed
-if [ ! -d "backend/venv" ]; then
-  echo "[setup] creating backend venv..."
-  python3 -m venv backend/venv
-  backend/venv/bin/pip install -q -r backend/requirements.txt
+if ! command -v uv >/dev/null 2>&1; then
+  echo "[error] uv is required to start the backend" >&2
+  exit 1
 fi
+
+echo "[setup] syncing backend dependencies..."
+(cd backend && uv sync --locked)
 
 if [ ! -d "frontend/node_modules" ]; then
   echo "[setup] installing frontend deps..."
@@ -22,17 +23,16 @@ if [ ! -d "frontend/node_modules" ]; then
 fi
 
 cleanup() {
-  echo ""
-  echo "[stop] shutting down..."
-  [ -n "$BACKEND_PID" ] && kill "$BACKEND_PID" 2>/dev/null || true
-  [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null || true
+  [ -n "${BACKEND_PID:-}" ] && kill "$BACKEND_PID" 2>/dev/null || true
+  [ -n "${FRONTEND_PID:-}" ] && kill "$FRONTEND_PID" 2>/dev/null || true
   wait 2>/dev/null || true
-  exit 0
 }
-trap cleanup INT TERM
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 echo "[backend] starting on :$BACKEND_PORT"
-(cd backend && ./venv/bin/uvicorn app.main:app --port "$BACKEND_PORT" --reload) &
+(cd backend && uv run --no-sync uvicorn app.main:app --port "$BACKEND_PORT" --reload) &
 BACKEND_PID=$!
 
 echo "[frontend] starting on :$FRONTEND_PORT"
@@ -46,4 +46,6 @@ echo "  Frontend: http://localhost:$FRONTEND_PORT"
 echo ""
 echo "Press Ctrl+C to stop."
 
-wait
+wait -n "$BACKEND_PID" "$FRONTEND_PID"
+echo "[error] a service stopped unexpectedly" >&2
+exit 1
